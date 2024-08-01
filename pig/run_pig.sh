@@ -275,4 +275,5 @@ else
 	# Save the results for later.
 	#
 	tar hcf /tmp/results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
+	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --tar_file /tmp/results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
 fi
