@@ -58,7 +58,7 @@ obtain_system_information()
 	RESULTSDIR=results_pig_${tuned_setting}_$(date "+%Y.%m.%d-%H.%M.%S")
 	rm results_pig_${tuned_setting}
 	mkdir ${RESULTSDIR}
-	ln -s ${RESULTSDIR} results_pig_${tuned_setting}
+	cp -R  ${RESULTSDIR} results_pig_${tuned_setting}
 
 	date >>  results_pig_${tuned_setting}/pig_config_info$suffix
 	uname -a >> results_pig_${tuned_setting}/pig_config_info$suffix
