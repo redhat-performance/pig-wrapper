@@ -11,6 +11,7 @@
 arguments="$@"
 pig_opts=""
 test_name="pig"
+pig_wrapper_version="1.0"
 
 curdir=`pwd`
 if [[ $0 == "./"* ]]; then
@@ -163,8 +164,10 @@ produce_results_info()
 	if [[ -f results_${test_name}.csv ]]; then
 		rm results_${test_name}.csv > /dev/null
 	fi
+	$TOOLS_BIN/test_header_info --front_matter --results_file results_${test_name}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $pig_wrapper_version --test_name $test_name
+
 	printf "%11s %11s\n"  "#threads" "sched_eff" > results.txt
-	echo  "#threads" "sched_eff" > results_${test_name}.csv
+	echo  "#threads" "sched_eff" >> results_${test_name}.csv
 	cpu_total=0
 	thread_total=0
 	thread_cnt=""
