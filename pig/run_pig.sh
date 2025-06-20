@@ -167,7 +167,7 @@ produce_results_info()
 	$TOOLS_BIN/test_header_info --front_matter --results_file results_${test_name}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $pig_wrapper_version --test_name $test_name
 
 	printf "%11s %11s\n"  "#threads" "sched_eff" > results.txt
-	echo  "#threads" "sched_eff" >> results_${test_name}.csv
+	echo  "#threads":"sched_eff" >> results_${test_name}.csv
 	cpu_total=0
 	thread_total=0
 	thread_cnt=""
@@ -198,12 +198,6 @@ produce_results_info()
 	printf "%11s %11s\n" $thread_cnt $value >> results.txt
 	thread_cnt=$threads
 	thread_total=$threads
-	lines=`wc -l results_${test_name}.csv | cut -d' ' -f 1`
-	if [ $lines -gt 2 ]; then
-		echo Ran > test_results_report
-	else
-		echo Failed > test_results_report
-	fi
 }
 #
 # Run the pig test itself.
@@ -273,6 +267,12 @@ else
 	cd $run_dir
 	cd results_${test_name}_${to_tuned_setting} 
 	produce_results_info
+	$TOOLS_BIN/validate_line --results_file results_${test_name}.csv --base_results_file $run_dir/base_test_results/test1/verify
+	if [[ $? -eq 0 ]]; then
+		echo Ran > test_results_report
+	else
+		echo Failed > test_results_report
+	fi
 	cd ..
 	#
 	# Save the results for later.
