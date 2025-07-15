@@ -12,6 +12,7 @@ arguments="$@"
 pig_opts=""
 test_name="pig"
 pig_wrapper_version="1.0"
+rtc=0
 
 curdir=`pwd`
 if [[ $0 == "./"* ]]; then
@@ -42,7 +43,7 @@ usage()
 	echo "  --regression: If present, we run a limted pig test. 8 points, 120 seconds each point"
 	echo "  --tools_git: Pointer to the test_tools git.  Default is ${tools_git}.  Top directory is always test_tools"
 	source test_tools/general_setup --usage
-	exit
+	exit 0
 }
 
 #
@@ -79,7 +80,7 @@ if [ ! -d "test_tools" ]; then
         git clone $tools_git test_tools
         if [ $? -ne 0 ]; then
                 echo pulling git $tools_git failed.
-                exit
+                exit 1
         fi
 fi
 
@@ -268,14 +269,11 @@ else
 	cd results_${test_name}_${to_tuned_setting} 
 	produce_results_info
 	$TOOLS_BIN/validate_line --results_file results_${test_name}.csv --base_results_file $run_dir/base_test_results/test1/verify
-	if [[ $? -eq 0 ]]; then
-		echo Ran > test_results_report
-	else
-		echo Failed > test_results_report
-	fi
+	rtc=$?
 	cd ..
 	#
 	# Save the results for later.
 	#
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
 fi
+exit $rtc
