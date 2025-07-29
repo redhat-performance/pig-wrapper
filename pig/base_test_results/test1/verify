@@ -1,7 +1,7 @@
 #
 # Main reg exp summary
 #
-# [1-9][0-9]{0,}:[0-9.]{1,}$
+# [1-9][0-9]{0,}:[0-9\.]{1,}$
 #
 #   Field 1: Non-zero field
 #   Field 2: A decimal field value
@@ -10,7 +10,7 @@
 # [1-9][0-9]{0,}
 #   [1-9]: This matches a single digit from 1 to 9 (i.e., any non-zero digit).
 #   [0-9]{0,}: This matches zero or more occurrences of any digit (0-9).
-# [0-9.]{1,}$:
+# [0-9\.]{1,}$:
 #    This matches one or more occurrences of either a digit (0-9)
 #    or a literal dot (.). The {1,} quantifier means one or more digits.
 #    $: This is an anchor that matches the end of the line.
@@ -20,4 +20,4 @@
 #
 # Indeterminate multipe fields.
 %_multiples
-[1-9][0-9]{0,}:[0-9.]{1,}$
+[1-9][0-9]{0,}:[0-9\.]{1,}$
