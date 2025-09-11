@@ -93,8 +93,6 @@ fi
 # to_home_root: home directory
 # to_configuration: configuration information
 # to_times_to_run: number of times to run the test
-# to_pbench: Run the test via pbench
-# to_puser: User running pbench
 # to_run_label: Label for the run
 # to_user: User on the test system running the test
 # to_sys_type: for results info, basically aws, azure or local
@@ -229,13 +227,6 @@ run_pig_test()
 	popd > /dev/null
 }
 
-if [ $to_pbench -eq 1 ]; then
-	source ~/.bashrc
-
-	echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11 --pbench_stats $to_pstats
-	$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11 --pbench_stats $to_pstats
-else
-	#
 	# Ensure required packages are installed for compilation/linking
 	#
 	os="`test_tools/detect_os`"
@@ -278,4 +269,3 @@ else
 	# Save the results for later.
 	#
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
-fi
