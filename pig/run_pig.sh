@@ -228,75 +228,74 @@ run_pig_test()
 	popd > /dev/null
 }
 
-	# Ensure required packages are installed for compilation/linking
+# Ensure required packages are installed for compilation/linking
+#
+os="`test_tools/detect_os`"
+packages="gcc"
+case "$os" in
+	"ubuntu")
+		packages="$packages,libnuma-dev"
+	;;
+	*) # RHEL based systems
+		packages="$packages,numactl-devel,numactl-libs"
+	;;
+esac
+echo "test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install" > /tmp/pi_debug
+test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install
+
+# Get PCP setup if we're using it
+if [[ $to_use_pcp -eq 1 ]]; then
+	source $TOOLS_BIN/pcp/pcp_commands.inc
+	setup_pcp
+	pcp_cfg=$TOOLS_BIN/pcp/default.cfg
+	pcpdir=/tmp/pcp_`date "+%Y.%m.%d-%H.%M.%S"`
+fi
+
+#
+# Check to see if we have a parameters file to use.
+#
+file=`${TOOLS_BIN}/get_params_file -d /$to_home_root/${to_user} -c ${config_name} -t ${test_name}`
+
+# If we're using PCP start logging
+if [[ $to_use_pcp -eq 1 ]]; then
+        echo "Start PCP"
+       	start_pcp ${pcpdir}/ ${test_name} $pcp_cfg
+fi
+
+if test -f "$file"; then
 	#
-	os="`test_tools/detect_os`"
-	packages="gcc"
-	case "$os" in
-		"ubuntu")
-			packages="$packages,libnuma-dev"
-		;;
-		*) # RHEL based systems
-			packages="$packages,numactl-devel,numactl-libs"
-		;;
-	esac
-	echo "test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install" > /tmp/pi_debug
-	test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install
-
-
-	# Get PCP setup if we're using it
-	if [[ $to_use_pcp -eq 1 ]]; then
-	    	source $TOOLS_BIN/pcp/pcp_commands.inc
-	    	setup_pcp
-	    	pcp_cfg=$TOOLS_BIN/pcp/default.cfg
-		pcpdir=/tmp/pcp_`date "+%Y.%m.%d-%H.%M.%S"`
-	fi
-
+	# We have a parameters file to use, walk through each line.
 	#
-	# Check to see if we have a parameters file to use.
+	while IFS= read -r pig_opts
+	do
+		run_pig_test
+	done < "$file"
+else
 	#
-	file=`${curdir}/tools_bin/get_params_file -d /$to_home_root/${to_user} -c ${config_name} -t ${test_name}`
-
-	# If we're using PCP start logging
-	if [[ $to_use_pcp -eq 1 ]]; then
-	        echo "Start PCP"
-	       	start_pcp ${pcpdir}/ ${test_name} $pcp_cfg
-	fi
-
-	if test -f "$file"; then
-		#
-		# We have a parameters file to use, walk through each line.
-		#
-		while IFS= read -r pig_opts
-		do
-			run_pig_test
-		done < "$file"
-	else
-		#
-		# Run default test
-		#
-		run_pig_test 
-	fi
-
-	# If we're using PCP, stop logging
-	if [[ $to_use_pcp -eq 1 ]]; then
-	        echo "Stop PCP"
-	        stop_pcp
-	fi
-	
-	# Shutdown PCP and clean up after ourselves
-	if [[ $to_use_pcp -eq 1 ]]; then
-	    	shutdown_pcp
-	fi
-	
-	cd $run_dir
-	cd results_${test_name}_${to_tuned_setting} 
-	produce_results_info
-	cd ..
+	# Run default test
 	#
-	# Save the results for later.
-	#
-	if [[ $to_use_pcp -eq 1 ]]; then
-		cp -R ${pcpdir} results_${test_name}_${to_tuned_setting}
-	fi
-	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
+	run_pig_test 
+fi
+
+# If we're using PCP, stop logging
+if [[ $to_use_pcp -eq 1 ]]; then
+        echo "Stop PCP"
+        stop_pcp
+fi
+
+# Shutdown PCP and clean up after ourselves
+if [[ $to_use_pcp -eq 1 ]]; then
+    	shutdown_pcp
+fi
+
+cd $run_dir
+cd results_${test_name}_${to_tuned_setting} 
+produce_results_info
+cd ..
+#
+# Save the results for later.
+#
+if [[ $to_use_pcp -eq 1 ]]; then
+	cp -R ${pcpdir} results_${test_name}_${to_tuned_setting}
+fi
+${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
