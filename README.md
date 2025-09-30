@@ -17,6 +17,7 @@ Options
   --pig_opts: options to pass directly to pig
   --regression: If present, we run a limted pig test. 8 points, 120 seconds each point
   --tools_git: Pointer to the test_tools git.  Default is https://github.com/dvalinrh/test_tools.  Top directory is always test_tools
+  --use_pcp: Enables use of Performance Co-Pilot in wrappers, defaults to 0.
 General options
   --home_parent <value>: Our parent home directory.  If not set, defaults to current working directory.
   --host_config <value>: default is the current host name.
