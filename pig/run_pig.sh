@@ -93,13 +93,12 @@ fi
 # to_home_root: home directory
 # to_configuration: configuration information
 # to_times_to_run: number of times to run the test
-# to_pbench: Run the test via pbench
-# to_puser: User running pbench
 # to_run_label: Label for the run
 # to_user: User on the test system running the test
 # to_sys_type: for results info, basically aws, azure or local
 # to_sysname: name of the system
 # to_tuned_setting: tuned setting
+# to_use_pcp: flag to indicate if pcp should be used
 #
 
 source test_tools/general_setup "$@"
@@ -159,7 +158,7 @@ shift $((OPTIND-1))
 #
 produce_results_info()
 {
-	grep -H "#CPUS:" iteration*  | cut -d: -f 4,5 | sed "s/  / /g" | cut -d' ' -f 2,4 | sort -n -k2 > temp_data
+	grep -H "#CPUS:" iteration* | cut -d: -f 4,5 | sed "s/  / /g" | cut -d' ' -f 2,4 | sort -n -k2 > temp_data
 
 	if [[ -f results_${test_name}.csv ]]; then
 		rm results_${test_name}.csv > /dev/null
@@ -229,53 +228,74 @@ run_pig_test()
 	popd > /dev/null
 }
 
-if [ $to_pbench -eq 1 ]; then
-	source ~/.bashrc
+# Ensure required packages are installed for compilation/linking
+#
+os="`test_tools/detect_os`"
+packages="gcc"
+case "$os" in
+	"ubuntu")
+		packages="$packages,libnuma-dev"
+	;;
+	*) # RHEL based systems
+		packages="$packages,numactl-devel,numactl-libs"
+	;;
+esac
+echo "test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install" > /tmp/pi_debug
+test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install
 
-	echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11 --pbench_stats $to_pstats
-	$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11 --pbench_stats $to_pstats
+# Get PCP setup if we're using it
+if [[ $to_use_pcp -eq 1 ]]; then
+	source $TOOLS_BIN/pcp/pcp_commands.inc
+	setup_pcp
+	pcp_cfg=$TOOLS_BIN/pcp/default.cfg
+	pcpdir=/tmp/pcp_`date "+%Y.%m.%d-%H.%M.%S"`
+fi
+
+#
+# Check to see if we have a parameters file to use.
+#
+file=`${TOOLS_BIN}/get_params_file -d /$to_home_root/${to_user} -c ${config_name} -t ${test_name}`
+
+# If we're using PCP start logging
+if [[ $to_use_pcp -eq 1 ]]; then
+        echo "Start PCP"
+       	start_pcp ${pcpdir}/ ${test_name} $pcp_cfg
+fi
+
+if test -f "$file"; then
+	#
+	# We have a parameters file to use, walk through each line.
+	#
+	while IFS= read -r pig_opts
+	do
+		run_pig_test
+	done < "$file"
 else
 	#
-	# Ensure required packages are installed for compilation/linking
+	# Run default test
 	#
-	os="`test_tools/detect_os`"
-	packages="gcc"
-	case "$os" in
-		"ubuntu")
-			packages="$packages,libnuma-dev"
-		;;
-		*) # RHEL based systems
-			packages="$packages,numactl-devel,numactl-libs"
-		;;
-	esac
-	test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install
-
-
-	#
-	# Check to see if we have a parameters file to use.
-	#
-	file=`${curdir}/tools_bin/get_params_file -d /$to_home_root/${to_user} -c ${config_name} -t ${test_name}`
-
-	if test -f "$file"; then
-		#
-		# We have a parameters file to use, walk through each line.
-		#
-		while IFS= read -r pig_opts
-		do
-			run_pig_test
-		done < "$file"
-	else
-		#
-		# Run default test
-		#
-		run_pig_test 
-	fi
-	cd $run_dir
-	cd results_${test_name}_${to_tuned_setting} 
-	produce_results_info
-	cd ..
-	#
-	# Save the results for later.
-	#
-	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
+	run_pig_test 
 fi
+
+# If we're using PCP, stop logging
+if [[ $to_use_pcp -eq 1 ]]; then
+        echo "Stop PCP"
+        stop_pcp
+fi
+
+# Shutdown PCP and clean up after ourselves
+if [[ $to_use_pcp -eq 1 ]]; then
+    	shutdown_pcp
+fi
+
+cd $run_dir
+cd results_${test_name}_${to_tuned_setting} 
+produce_results_info
+cd ..
+#
+# Save the results for later.
+#
+if [[ $to_use_pcp -eq 1 ]]; then
+	cp -R ${pcpdir} results_${test_name}_${to_tuned_setting}
+fi
+${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
