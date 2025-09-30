@@ -56,7 +56,7 @@ obtain_system_information()
 	numb_cpus=`echo $cpus - 2 | bc`
 
 	RESULTSDIR=results_pig_${tuned_setting}_$(date "+%Y.%m.%d-%H.%M.%S")
-	rm results_pig_${tuned_setting}
+	rm -rf results_pig_${tuned_setting}
 	mkdir ${RESULTSDIR}
 	cp -R  ${RESULTSDIR} results_pig_${tuned_setting}
 
