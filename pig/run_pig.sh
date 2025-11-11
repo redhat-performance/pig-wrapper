@@ -228,20 +228,10 @@ run_pig_test()
 	popd > /dev/null
 }
 
-# Ensure required packages are installed for compilation/linking
-#
-os="`test_tools/detect_os`"
-packages="gcc"
-case "$os" in
-	"ubuntu")
-		packages="$packages,libnuma-dev"
-	;;
-	*) # RHEL based systems
-		packages="$packages,numactl-devel,numactl-libs"
-	;;
-esac
-echo "test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install" > /tmp/pi_debug
-test_tools/package_tool --packages $packages --no_packages $to_no_pkg_install
+test_tools/package_tool --wrapper_config "${run_dir}/pig.json" --no_packages "$to_no_pkg_install"
+if [[ $? -ne 0 ]]; then
+	exit_out "package_tool reported failure installing dependencies."
+fi
 
 # Get PCP setup if we're using it
 if [[ $to_use_pcp -eq 1 ]]; then
