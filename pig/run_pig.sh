@@ -48,6 +48,7 @@ usage()
 #
 # Clone the repo that contains the common code and tools
 #
+export TOOLS_BIN="$HOME/test_tools"
 tools_git=https://github.com/redhat-performance/test_tools-wrappers
 
 found=0
@@ -75,8 +76,8 @@ done
 # Check to see if the test tools directory exists.  If it does, we do not need to
 # clone the repo.
 #
-if [ ! -d "test_tools" ]; then
-        git clone $tools_git test_tools
+if [ ! -d "$TOOLS_BIN" ]; then
+        git clone $tools_git $TOOLS_BIN
         if [ $? -ne 0 ]; then
                 echo pulling git $tools_git failed.
                 exit
@@ -101,7 +102,7 @@ fi
 # to_use_pcp: flag to indicate if pcp should be used
 #
 
-source test_tools/general_setup "$@"
+source $TOOLS_BIN/general_setup "$@"
 
 #
 # Define options
@@ -228,7 +229,7 @@ run_pig_test()
 	popd > /dev/null
 }
 
-test_tools/package_tool --wrapper_config "${run_dir}/pig.json" --no_packages "$to_no_pkg_install"
+$TOOLS_BIN/package_tool --wrapper_config "${run_dir}/pig.json" --no_packages "$to_no_pkg_install"
 if [[ $? -ne 0 ]]; then
 	exit_out "package_tool reported failure installing dependencies."
 fi
@@ -288,4 +289,4 @@ cd ..
 if [[ $to_use_pcp -eq 1 ]]; then
 	cp -R ${pcpdir} results_${test_name}_${to_tuned_setting}
 fi
-${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
+${TOOLS_BIN}/save_results --curdir $curdir --home_root $to_home_root --copy_dir results_${test_name}_${to_tuned_setting} --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user
