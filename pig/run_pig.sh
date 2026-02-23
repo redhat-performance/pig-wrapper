@@ -229,7 +229,7 @@ run_pig_test()
 	popd > /dev/null
 }
 
-$TOOLS_BIN/package_tool --wrapper_config "${run_dir}/pig.json" --no_packages "$to_no_pkg_install"
+package_tool --wrapper_config "${run_dir}/pig.json"
 if [[ $? -ne 0 ]]; then
 	exit_out "package_tool reported failure installing dependencies."
 fi
