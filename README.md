@@ -13,7 +13,7 @@ The wrapper provides:
 - Result collection, processing, and CSV generation with scheduling efficiency metrics.
 - System configuration metadata capture.
 - Integration with test_tools framework.
-- Optional Performance Co-Pilot (PCP) integration.
+- Optional Performance Co-Pilot (PCP) integration (not recommended, as PCP will perturb the system and produce unreliable results).
 
 ## Command-Line Options
 
@@ -33,7 +33,7 @@ General test_tools options:
   --sysname: Name of the system running, used in determining config files. Defaults to hostname.
   --tuned_setting: Used in naming the results directory. For RHEL, defaults to current active tuned profile.
       For non-RHEL systems, defaults to 'none'.
-  --use_pcp: Enable Performance Co-Pilot monitoring during test execution.
+  --use_pcp: Enable Performance Co-Pilot monitoring during test execution (not recommended, perturbs the system).
   --tools_git <value>: Git repo to retrieve the required tools from.
       Default: https://github.com/redhat-performance/test_tools-wrappers
   --usage: Display this usage message.
@@ -44,7 +44,7 @@ General test_tools options:
 The `run_pig.sh` script performs the following workflow:
 
 1. **Environment Setup**:
-   - Clones the test_tools-wrappers repository if not present (default: ~/test_tools).
+   - Clones the test_tools-wrappers repository if not present (default: test_tools in the current working directory).
    - Sources general setup utilities for test configuration.
    - Parses command-line options for pig-specific and general test parameters.
 
@@ -52,9 +52,10 @@ The `run_pig.sh` script performs the following workflow:
    - Installs required dependencies via package_tool using `pig.json`.
    - Dependencies are defined for different OS variants (RHEL, Ubuntu, SLES, Amazon Linux).
 
-3. **PCP Setup** (if `--use_pcp` is enabled):
+3. **PCP Setup** (if `--use_pcp` is enabled, not recommended):
    - Sources PCP command library and initializes PCP logging.
    - Configures PCP data collection directory with timestamp.
+   - **Note**: PCP monitoring is not recommended as it perturbs the system and produces unreliable results.
 
 4. **Parameter File Check**:
    - Checks for a parameters file matching the host configuration and test name.
@@ -73,7 +74,7 @@ The `run_pig.sh` script performs the following workflow:
 
 7. **Thread Increment Calculation**:
    - Divides total CPUs into a configurable number of data points (default: 8).
-   - Starts at 1 thread and increments evenly up to total CPUs.
+   - Starts at 1 thread and increments evenly up to total CPUs minus 2.
    - For systems with fewer CPUs than data points, increments by 1.
 
 8. **Test Execution**:
@@ -215,12 +216,6 @@ Runs the full test 3 times to check consistency.
 ```
 Passes custom options directly to pig. Format is `suffix:options`.
 
-### Run with PCP monitoring
-```bash
-./run_pig.sh --use_pcp
-```
-Collects Performance Co-Pilot data during the run.
-
 ### Run with specific system configuration
 ```bash
 ./run_pig.sh --run_user root --home_parent / --iterations 1 --tuned_setting tuned_none_sys_file_none --host_config hawkeye --sysname hawkeye --sys_type local
@@ -229,9 +224,9 @@ Specifies user, home directory, tuned profile, host configuration, and system ty
 
 ### Combination example
 ```bash
-./run_pig.sh --iterations 3 --regression --use_pcp
+./run_pig.sh --iterations 3 --regression
 ```
-Runs 3 iterations of the regression test with PCP data collection.
+Runs 3 iterations of the regression test.
 
 ## How Thread Scaling Works
 
@@ -294,7 +289,7 @@ The `test_results_report` file indicates test outcome:
 
 ### Performance Tips
 - Run multiple iterations to verify consistency.
-- Ensure system is idle (no other workloads) for best results.
+- The system **must** be idle (no other workloads running) during the test. Results from a non-idle system cannot be used for comparison against other systems, as we are measuring migration rate and a non-idle system will produce random, unreliable results.
 - Disable CPU frequency scaling (use performance governor) for reproducible results.
 - Consider the active tuned profile on RHEL systems.
 - For production benchmarking, allow system to warm up with a test run first.
@@ -307,5 +302,5 @@ The `test_results_report` file indicates test outcome:
 ### Troubleshooting
 - If pig fails to build, verify that `gcc`, `numactl-devel` (or `libnuma-dev` on Ubuntu), and `bc` are installed.
 - If performance is unexpectedly low, check CPU frequency and system load.
-- Use `--use_pcp` to collect detailed performance counters for analysis.
+- The `--use_pcp` option is available to collect performance counters, but is **not recommended** as PCP monitoring perturbs the system and produces unreliable results.
 - For additional details, see `pig_doc.txt` and `pig_examples.txt` provided with the pig tool.
