@@ -187,14 +187,14 @@ produce_results_info()
 			continue
 		fi
 		value=`echo "scale=2;$cpu_total/$thread_total" | bc`
-		echo $thread_cnt:$value >> results_${test_name}.csv
+		echo $thread_cnt,$value >> results_${test_name}.csv
 		printf "%11s %11s\n" $thread_cnt $value >> results.txt
 		cpu_total=$cpus
 		thread_cnt=$threads
 		thread_total=$threads
 	done < "temp_data"
 	value=`echo "scale=2;$cpu_total/$thread_total" | bc`
-	echo $thread_cnt:$value >> results_${test_name}.csv
+	echo $thread_cnt,$value >> results_${test_name}.csv
 	printf "%11s %11s\n" $thread_cnt $value >> results.txt
 	thread_cnt=$threads
 	thread_total=$threads
